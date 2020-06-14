@@ -1,0 +1,46 @@
+version: '{build}'
+pull_requests:
+  do_not_increment_build_number: true
+image: Visual Studio 2019
+clone_depth: 1
+clone_folder: C:\projects\SDL_net\
+install:
+- ps: |
+    $ErrorActionPreference = "Stop"
+
+    cd C:\projects\
+
+    Start-FileDownload "https://github.com/opentyrian/SDL-MSVC/releases/download/v1.2.15-VS2019-1/SDL-devel-1.2.15-VS2019.zip"
+    7z x "SDL-devel-1.2.15-VS2019.zip"
+    Move-Item "SDL-1.2.15" "SDL"
+build_script:
+- ps: |
+    $ErrorActionPreference = "Stop"
+
+    cd C:\projects\SDL_net\
+
+    foreach ($platform in "Win32","x64")
+    {
+      msbuild "VisualC\SDL_net.sln" /p:Configuration=Release /p:Platform=$platform /p:SDLBaseDir=C:\projects\SDL /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+      if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
+    }
+
+    New-Item "SDL_net-1.2.8\lib" -ItemType Directory -Force | Out-Null
+    foreach ($platform in "x86","x64")
+    {
+      New-Item "SDL_net-1.2.8\lib\$platform" -ItemType Directory -Force | Out-Null
+      foreach ($f in "SDL_net.dll","SDL_net.lib")
+      {
+        Copy-Item "VisualC\$platform\Release\$f" "SDL_net-1.2.8\lib\$platform\"
+      }
+    }
+
+    New-Item "SDL_net-1.2.8\include" -ItemType Directory -Force | Out-Null
+    Copy-Item "SDL_net.h" "SDL_net-1.2.8\include\"
+    Copy-Item "CHANGES" "SDL_net-1.2.8\CHANGES.txt"
+    Copy-Item "COPYING" "SDL_net-1.2.8\COPYING.txt"
+    Copy-Item "README" "SDL_net-1.2.8\README.txt"
+
+    7z a "SDL_net-devel-1.2.8-VS2019.zip" "SDL_net-1.2.8"
+artifacts:
+- path: SDL_net-devel-1.2.8-VS2019.zip
