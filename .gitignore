@@ -1,0 +1,7 @@
+.vs/
+*.user
+
+/VisualC/x86/Debug
+/VisualC/x86/Release
+/VisualC/x64/Debug
+/VisualC/x64/Release
